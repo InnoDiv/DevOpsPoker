@@ -67,11 +67,8 @@ class PokerPlayerAPI(Resource):
     #         bid  : a number between 0 and max_bid
     def __get_bid(self, data):
 
-        if(int(data['max_bid'])>0):
-            return int(data['min_bid'])
-        else:
-            return 0
-
+        return data['min_bid']
+    
     # dispatch incoming get commands
     def get(self, command_id):
 
