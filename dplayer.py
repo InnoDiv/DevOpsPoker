@@ -70,6 +70,8 @@ class PokerPlayerAPI(Resource):
             return 0
         elif(self.get_match_in_board(data)>0):
             return data['max_bid']
+        elif(self.convertcards_into_numbers(data)):
+            return data['max_bid']
         elif(self.confidence>0):
             return data['min_bid']
         # else:
@@ -97,6 +99,39 @@ class PokerPlayerAPI(Resource):
                     return (int(self) + int(self))
             else:
                 return 0
+
+
+    def convertcards_into_numbers(self,datalist):
+        cardsinhand = datalist['hand']
+        cardsonboard = datalist['board']
+        cardslist=[self.get_number_inreturn_data(cardsinhand[0]),self.get_number_inreturn_data(cardsinhand[1])]
+        for cardonboard in cardsonboard:
+            cardslist.append(self.get_number_inreturn_data(cardonboard))
+        cardslist.sort()
+        counter=0
+        for index in range(len(cardslist)):
+            if(cardslist[index+1]-cardslist[index]==1):
+                counter=counter + 1
+            elif(cardslist[index+1]-cardslist[index]>1 or cardslist[index+1]-cardslist[index]<0 ):
+                if(counter<4):
+                    break
+        if(counter>3):
+            return True
+
+
+    def get_number_inreturn_data(self,carddata):
+        if (carddata[1] == 'T'):
+            return 10
+        if (carddata[1] == 'J'):
+            return 11
+        if (carddata[1] == 'Q'):
+            return 12
+        if (carddata[1] == 'K'):
+            return 13
+        if (carddata[1] == 'A'):
+            return 14
+        else:
+            return (int(carddata[0]))
 
 
     """Implementation of confidence level calculation"""
