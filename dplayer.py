@@ -8,8 +8,8 @@
 # -----------------------------------------------------------
 # Configuration
 # You need to change the setting according to your environment
-gregister_url = 'http://192.168.8.100:5001'
-glocalip_adr = '192.168.8.102'
+gregister_url='http://192.168.8.100:5001'
+glocalip_adr='192.168.8.102'
 
 # -----------------------------------------------------------
 
@@ -24,11 +24,9 @@ app = Flask(__name__)
 api = Api(app)
 
 # Web API to be called from the poker manager
-
-
 class PokerPlayerAPI(Resource):
     global confidence
-    # return bid to caller
+    ## return bid to caller
     #
     #  Depending on the cards passed to this function in the data parameter,
     #  this function has to return the next bid.
@@ -67,11 +65,12 @@ class PokerPlayerAPI(Resource):
     #
     # @return a dictionary containing the following values
     #         bid  : a number between 0 and max_bid
-
     def __get_bid(self, data):
-        if(self.checkpaircardsinhand(data) > (0.5 * data['max_bid'])):
+        if(self.checkpaircardsinhand(data)>(0.5 * data['max_bid'])):
             return 0
-        elif(self.confidence > 0):
+        elif(self.get_match_in_board(data)>0):
+            return data['max_bid']
+        elif(self.confidence>0):
             return data['min_bid']
         # else:
         #     return data['min_bid'];
@@ -82,8 +81,8 @@ class PokerPlayerAPI(Resource):
         cardinhand = datalist['hand']
         cardonboard = datalist['board']
         if not cardonboard:
-            if(cardinhand[0][0] == cardinhand[1][0]):
-                self = cardinhand[0][0]
+            if(cardinhand[0][0]==cardinhand[1][0]):
+                self=cardinhand[0][0]
                 if (self == 'T'):
                     return 20
                 if (self == 'J'):
@@ -99,19 +98,60 @@ class PokerPlayerAPI(Resource):
             else:
                 return 0
 
+
+    """Implementation of confidence level calculation"""
+    def check3ofkindpaircardsinhand(self,datalist):
+        if (datalist[1] == 'T'):
+            return 30
+        if (datalist[1] == 'J'):
+            return 33
+        if (datalist[1] == 'Q'):
+            return 36
+        if (datalist[1] == 'K'):
+            return 38
+        if (datalist[1] == 'A'):
+            return 40
+        else:
+            return (int(datalist[0] ) + int(datalist[0] ))
+
+
+    def get_match_in_board(self,data):
+        cardsinhand = data['hand']
+        cardsonboard = data['board']
+        for cardonboard in cardsonboard:
+            if(cardonboard[0]==cardsinhand[0][0] or cardonboard[0]==cardsinhand[1][0]):
+                if(cardsinhand[1][0]==cardsinhand[0][0]):
+                    return self.check3ofkindpaircardsinhand(cardonboard)
+                elif(self.getpairofcard_on_board(data,cardonboard)):
+                    return self.check3ofkindpaircardsinhand(cardonboard)
+        return 0
+
+
+
+    def getpairofcard_on_board(self,datalist,selected_card):
+        cardsonboard = datalist['board']
+        for cardonboard1 in cardsonboard:
+            if(selected_card[1] != cardonboard1[1]):
+                if(selected_card[1] == cardonboard1[1]):
+                    return True
+        return False
+
+
+
     def __get_values_of_card(self):
-        if(self == 'T'):
+        if(self=='T'):
             return 20
-        if(self == 'J'):
+        if(self=='J'):
             return 22
-        if(self == 'Q'):
+        if(self=='Q'):
             return 24
-        if(self == 'K'):
+        if(self=='K'):
             return 26
-        if(self == 'A'):
+        if(self=='A'):
             return 40
         else:
             return (int(self) + int(self))
+
 
     def get(self, command_id):
 
@@ -131,8 +171,6 @@ class PokerPlayerAPI(Resource):
 api.add_resource(PokerPlayerAPI, '/dpoker/player/v1/<string:command_id>')
 
 # main function
-
-
 def main():
 
     # run the player bot with parameters
@@ -147,17 +185,17 @@ DevOps Poker Bot - usage instruction
 ------------------------------------
 python3 dplayer.py <team name> <port> <password>
 example:
-   python3 dplayer bazinga 40001 x407
-       """)
+    python3 dplayer bazinga 40001 x407
+        """)
         return 0
 
+
     # register player
-    r = put("%s/dpoker/v1/enter_game" % gregister_url, data={'team': team_name,
-                                                             'url': api_url,
-                                                             'pass': api_pass}).json()
+    r = put("%s/dpoker/v1/enter_game"%gregister_url, data={'team': team_name, \
+                                                           'url': api_url,\
+                                                           'pass':api_pass}).json()
     if r != 201:
-        raise Exception(
-            'registration failed: probably wrong team name or password')
+        raise Exception('registration failed: probably wrong team name or password')
 
     else:
         print('registration successful')
@@ -165,11 +203,11 @@ example:
     try:
         app.run(host='0.0.0.0', port=api_port, debug=False)
     finally:
-        put("%s/dpoker/v1/leave_game" % gregister_url, data={'team': team_name,
-                                                             'url': api_url,
-                                                             'pass': api_pass}).json()
-
-
+        put("%s/dpoker/v1/leave_game"%gregister_url, data={'team': team_name, \
+                                                           'url': api_url,\
+                                                           'pass': api_pass}).json()
 # run the main function
 if __name__ == '__main__':
     main()
+
+
